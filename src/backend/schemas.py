@@ -30,4 +30,12 @@ class Comment(BaseModel):
         orm_mode=True
 
 
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    phone_number:str
 
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str

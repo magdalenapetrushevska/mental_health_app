@@ -1,22 +1,29 @@
-from datetime import date,datetime
+from datetime import date,datetime,timedelta
 from distutils.command.build import build
-from fastapi import FastAPI,status,HTTPException,Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional,List
 import schemas
 from fastapi.responses import FileResponse,RedirectResponse
-from enum import Enum
-import random
-import time
-import asyncio
-from fastapi import FastAPI, Form, status
+
+from fastapi import FastAPI, Form, status, Depends, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
-
-
+from typing import Union, Any
+from sqlalchemy import false
 from database import SessionLocal
 from sqlalchemy.sql import func
 import models
+
+import jwt
+
+from fastapi.security import HTTPBearer
+from pydantic import ValidationError
+
+
+
+SECURITY_ALGORITHM = 'HS256'
+SECRET_KEY = '123456'
+
 
 app=FastAPI()
 
@@ -35,10 +42,126 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+reusable_oauth2 = HTTPBearer(
+    scheme_name='Authorization'
+)
 
 
 db=SessionLocal()
 
+
+################################################################ AUTHENTICATION
+
+
+# method to verify user password
+def verify_password(username, password):
+    user = db.query(models.User).filter(username == models.User.username).first()
+    if user is None:
+        return false 
+    if password == user.password:
+        return True
+    return False
+
+
+
+# method to generate token
+def generate_token(username: Union[str, Any]) -> str:
+    expire = datetime.utcnow() + timedelta(
+        seconds=60 * 60 * 24 * 3  # Expired after 3 days
+    )
+    to_encode = {
+        "exp": expire, "username": username
+    }
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=SECURITY_ALGORITHM)
+    return encoded_jwt
+
+
+
+# method to valdate token
+def validate_token(http_authorization_credentials=Depends(reusable_oauth2)) -> str:
+    """
+    Decode JWT token to get username => return username
+    """
+    try:
+        payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
+        
+        print("Proitaj username: ")
+        print(payload.get('username'))
+        return payload.get('username')
+    except(jwt.PyJWTError, ValidationError):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Could not validate credentials",
+        )
+
+
+
+# method to get the current user
+@app.get("/current")
+def get_current_user(http_authorization_credentials=Depends(reusable_oauth2)) -> str:
+    try:
+        payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
+        print('printame username od funkciju')
+        print(payload.get('username'))
+        print("printamo password of funkcija sto se testira:")
+        print(payload.get('password'))
+        current_username = payload.get('username')
+        current_user = db.query(models.User).filter(current_username == models.User.username).first()
+        return current_user
+    except(jwt.PyJWTError, ValidationError):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Could not validate credentials",
+        )
+
+
+
+# login method
+@app.post('/login',tags=["auth"])
+def login(request_data: schemas.LoginRequest):
+    print(f'[x] request_data: {request_data.__dict__}')
+    if verify_password(username=request_data.username, password=request_data.password):
+        token = generate_token(request_data.username)
+        return {
+            'token': token
+        }
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+
+
+# register method
+@app.post('/register',status_code=status.HTTP_201_CREATED, tags=["auth"])
+def create_new_post(user: schemas.RegisterRequest):
+    db_item=db.query(models.User).filter(models.User.username==user.username).first()
+
+    if db_item is not None:
+        raise HTTPException(status_code=400,detail="User already exists")
+
+
+    new_user=models.User( 
+        username=user.username,    
+        password=user.password,
+        phone_number = user.phone_number
+    )
+
+
+    db.add(new_user)
+    db.commit()
+
+    return new_user
+
+
+
+# @app.get('/books', dependencies=[Depends(validate_token)])
+# def list_books():
+#     return {'data': ['Sherlock Homes', 'Harry Potter', 'Rich Dad Poor Dad']}
+
+
+
+
+
+
+##################################################################### POSTS
 
 # method to get all posts
 @app.get("/api/posts",response_model=List[schemas.Post], status_code=status.HTTP_200_OK,tags=["posts"])
@@ -103,7 +226,7 @@ def delete_a_post(id:int):
 
 
 
-#########################################################################
+#########################################################################  COMMENTS
 
 
 # method to add new comment
