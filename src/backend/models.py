@@ -58,3 +58,15 @@ class MoodHistory(Base):
     user_id = Column(BigInteger, ForeignKey("users.id"))
 
 
+class Reminder(Base):
+    __tablename__='reminders'
+    id=Column(BigInteger,primary_key=True, autoincrement=True)
+    name = Column(String(255),nullable=False)
+    quantity = Column(Integer,nullable=False)
+    start_date = Column(Date)
+    end_date=Column(Date)
+    publish_time=Column(Time)
+    user_phone_number=Column(String(255),nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.id"))
+
+

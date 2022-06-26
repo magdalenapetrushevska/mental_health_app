@@ -50,3 +50,11 @@ class RateMoodForm(BaseModel):
 class MoodHistoryDates(BaseModel):
     start_date:date
     end_date:date
+
+
+class Reminder(BaseModel):
+    name : str
+    quantity : int
+    start_date : date
+    end_date : date
+    publish_time : time

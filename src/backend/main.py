@@ -13,6 +13,7 @@ from sqlalchemy import false
 from database import SessionLocal
 from sqlalchemy.sql import func
 import models
+from fpdf import FPDF
 
 import jwt
 
@@ -342,3 +343,45 @@ def get_activities(form:schemas.RateMoodForm, http_authorization_credentials: st
 def get_mood_history(http_authorization_credentials: str = Depends(reusable_oauth2)):
     current_user = get_current_user(http_authorization_credentials)
     return db.query(models.MoodHistory).filter(current_user.id == models.MoodHistory.user_id).all()
+
+
+
+# method to generate pdf for entire mood history of the current user
+@app.get("/api/export-pdf",tags=["moods"])
+def generate_pdf_doc(http_authorization_credentials: str = Depends(reusable_oauth2)):
+
+    current_user = get_current_user(http_authorization_credentials)
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    builder = ""
+    builder+="\n Mood history \n\n"
+    builder+="User: "
+    builder+=str(current_user.username)
+    builder+="\n\n"
+
+    lista = db.query(models.MoodHistory).filter(current_user.id == models.MoodHistory.user_id).all()
+
+    for item in lista:
+        builder+="\n"
+        builder+=str("Date:   ")
+        builder+=str(item.date_time)
+        builder+=str("\n")
+        builder+=str("Mood:   ")
+        builder+=str(item.mood)
+        builder+=str("\n")
+        builder+=str("Description:  ")
+        builder+=str(item.description)
+        builder+=str("\n")
+        builder+=str("-----------------------------------------------")
+        builder+=str("-----------------------------------------------")
+    pdf.multi_cell(200, 10, txt=builder, align="C")
+    pdf.output('mood_history_files/moodHistory.pdf')
+    return FileResponse("mood_history_files/moodHistory.pdf")
+
+
+
+#####################################################   REMINDERS
+
+
