@@ -14,11 +14,13 @@ from database import SessionLocal
 from sqlalchemy.sql import func
 import models
 from fpdf import FPDF
-
+from twilio.rest import Client
 import jwt
-
+import config
+import asyncio
 from fastapi.security import HTTPBearer
 from pydantic import ValidationError
+from fastapi_utils.tasks import repeat_every
 
 
 
@@ -27,7 +29,7 @@ SECRET_KEY = '123456'
 
 
 app=FastAPI()
-
+settings = config.Settings()
 
 origins = [
     "http://localhost:3000",
@@ -49,6 +51,70 @@ reusable_oauth2 = HTTPBearer(
 
 
 db=SessionLocal()
+
+
+
+
+#####################################################   SCHEDULING
+
+def send_sms(to_number, body):
+    client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
+    return client.messages.create(from_=settings.twilio_phone_number,
+                                  to=to_number, body=body)
+
+
+async def handle_sms(phone: str, message:str):
+    await asyncio.get_event_loop().run_in_executor(
+        None, send_sms, phone, message)
+
+
+
+
+def delete_obsolate_reminder(id:int):
+    reminder_to_delete = db.query(models.Reminder).filter(models.Reminder.id==id).first()
+
+    if reminder_to_delete is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reminder not found")
+    
+    db.delete(reminder_to_delete)
+    db.commit()
+
+
+
+
+async def job():
+    reminders = db.query(models.Reminder).all()
+    for item in reminders:
+        today = date.today()
+
+        if item.end_date < today:
+            delete_obsolate_reminder(item.id)
+
+    
+        current_time = datetime.now()
+        if item.publish_time.hour == current_time.hour and item.publish_time.minute == current_time.minute:
+            # here we define the format of the message to be sent
+            message = ""
+            message+="It is time for you to take your medication. \n"
+            message+="Medication name:  "
+            message+=str(item.name)
+            message+=str("\n")
+            message+=str("Quantity:  ")
+            message+=str(item.quantity)
+
+            
+            phone = item.user_phone_number
+            handle_sms(phone, message)
+
+
+
+
+@app.on_event("startup")
+@repeat_every(seconds=60)  
+def remove_expired_tokens_task() -> None:
+    job()
+
+
 
 
 ################################################################ AUTHENTICATION
@@ -214,7 +280,7 @@ def create_new_post(post:schemas.Post,http_authorization_credentials: str = Depe
 
 
 # method to update a post
-@app.put("/api/post/{id}",response_model=schemas.Post, status_code=status.HTTP_200_OK,tags=["posts"])
+@app.put("/api/post/{id}",response_model=schemas.Post, status_code=status.HTTP_200_OK,tags=["posts"],dependencies=[Depends(validate_token)])
 def update_post(id:int,post:schemas.Post):
     post_to_update = db.query(models.Post).filter(models.Post.id == id).first()
     post_to_update.title=post.title
@@ -227,7 +293,7 @@ def update_post(id:int,post:schemas.Post):
 
 
 # method to delete a post
-@app.delete("/api/post/{id}",tags=["posts"])
+@app.delete("/api/post/{id}",tags=["posts"],dependencies=[Depends(validate_token)])
 def delete_a_post(id:int):
     post_to_delete = db.query(models.Post).filter(models.Post.id==id).first()
 
@@ -271,7 +337,7 @@ def create_new_comment(id:int,comment:schemas.Comment,http_authorization_credent
 
 
 # method to delete a comment
-@app.delete("/api/comments/delete/{id}",tags=["comments"])
+@app.delete("/api/comments/delete/{id}",tags=["comments"],dependencies=[Depends(validate_token)])
 def delete_comment(id:int):
     comment_to_delete = db.query(models.Comment).filter(models.Comment.id==id).first()
 
@@ -382,6 +448,51 @@ def generate_pdf_doc(http_authorization_credentials: str = Depends(reusable_oaut
 
 
 
-#####################################################   REMINDERS
 
 
+
+############################################### REMINDERS
+
+
+# method to add new reminder
+@app.post('/api/reminders',
+        status_code=status.HTTP_201_CREATED, tags=["reminders"])
+def create_new_reminder(reminder:schemas.Reminder,http_authorization_credentials: str = Depends(reusable_oauth2)):
+
+    current_user = get_current_user(http_authorization_credentials)
+
+    new_reminder=models.Reminder( 
+        name=reminder.name,    
+        quantity=reminder.quantity,
+        start_date = reminder.start_date,
+        end_date = reminder.end_date,
+        publish_time = reminder.publish_time,
+        user_phone_number = current_user.phone_number,
+        user_id = current_user.id
+    )
+
+    db.add(new_reminder)
+    db.commit()
+
+    return new_reminder
+
+
+# method to get all reminders for current user
+@app.get("/api/reminders", status_code=status.HTTP_200_OK,tags=["reminders"])
+def get_all_reminders(http_authorization_credentials: str = Depends(reusable_oauth2)):
+    current_user = get_current_user(http_authorization_credentials)
+    return db.query(models.Reminder).filter(current_user.id == models.Reminder.user_id).all()
+
+
+# method to delete a reminder
+@app.delete("/api/reminder/{id}",tags=["reminders"],dependencies=[Depends(validate_token)])
+def delete_a_reminder(id:int):
+    reminder_to_delete = db.query(models.Reminder).filter(models.Reminder.id==id).first()
+
+    if reminder_to_delete is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reminder not found")
+    
+    db.delete(reminder_to_delete)
+    db.commit()
+
+    return reminder_to_delete
