@@ -39,3 +39,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+
+
+class RateMoodForm(BaseModel):
+    category:Optional[str]
+    description:Optional[str]
+
+
+class MoodHistoryDates(BaseModel):
+    start_date:date
+    end_date:date

@@ -307,3 +307,38 @@ def like_a_comment(id:int):
 
     return comment_to_like
 
+
+#####################################################   MOOD RECORDS
+
+
+# method to get mood options
+@app.get("/api/moods",tags=["moods"])
+def get_mood_options():
+    enum_list = models.MoodOptions.list()
+    return enum_list
+
+
+# method to add new mood
+@app.post("/api/new-mood",tags=["moods"])
+def get_activities(form:schemas.RateMoodForm, http_authorization_credentials: str = Depends(reusable_oauth2)):
+
+    current_user =get_current_user(http_authorization_credentials)
+
+    new_mood=models.MoodHistory( 
+      mood = form.category,
+      description = form.description,
+      user_id = current_user.id
+    )
+
+    db.add(new_mood)
+    db.commit()
+
+    return new_mood
+
+
+
+# method to get the mood history of a current user
+@app.get("/api/mood-history",tags=["moods"])
+def get_mood_history(http_authorization_credentials: str = Depends(reusable_oauth2)):
+    current_user = get_current_user(http_authorization_credentials)
+    return db.query(models.MoodHistory).filter(current_user.id == models.MoodHistory.user_id).all()
