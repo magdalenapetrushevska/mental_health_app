@@ -200,7 +200,7 @@ def get_current_user(http_authorization_credentials: str = Depends(reusable_oaut
 
 
 # login method
-@app.post('/login',tags=["auth"])
+@app.post('/api/login',tags=["auth"])
 def login(request_data: schemas.LoginRequest):
     print(f'[x] request_data: {request_data.__dict__}')
     if verify_password(username=request_data.username, password=request_data.password):
@@ -213,7 +213,7 @@ def login(request_data: schemas.LoginRequest):
 
 
 # register method
-@app.post('/register',status_code=status.HTTP_201_CREATED, tags=["auth"])
+@app.post('/api/register',status_code=status.HTTP_201_CREATED, tags=["auth"])
 def create_new_post(user: schemas.RegisterRequest):
     db_item=db.query(models.User).filter(models.User.username==user.username).first()
 
