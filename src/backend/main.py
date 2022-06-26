@@ -85,9 +85,9 @@ def validate_token(http_authorization_credentials=Depends(reusable_oauth2)) -> s
     try:
         payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
         
-        print("Proitaj username: ")
-        print(payload.get('username'))
-        return payload.get('username')
+        current_username = payload.get('username')
+        current_user = db.query(models.User).filter(current_username == models.User.username).first()
+        return current_user
     except(jwt.PyJWTError, ValidationError):
         raise HTTPException(
             status_code=403,
@@ -97,14 +97,28 @@ def validate_token(http_authorization_credentials=Depends(reusable_oauth2)) -> s
 
 
 # method to get the current user
-@app.get("/current")
-def get_current_user(http_authorization_credentials=Depends(reusable_oauth2)) -> str:
+# @app.get("/current")
+# def get_current_user(http_authorization_credentials=Depends(reusable_oauth2)) -> str:
+#     try:
+#         payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
+#         print('printame username od funkciju')
+#         print(payload.get('username'))
+#         print("printamo password of funkcija sto se testira:")
+#         print(payload.get('password'))
+#         current_username = payload.get('username')
+#         current_user = db.query(models.User).filter(current_username == models.User.username).first()
+#         return current_user
+#     except(jwt.PyJWTError, ValidationError):
+#         raise HTTPException(
+#             status_code=403,
+#             detail=f"Could not validate credentials",
+#         )
+
+# helper method to get the current user
+def get_current_user(http_authorization_credentials: str = Depends(reusable_oauth2)):
     try:
         payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
-        print('printame username od funkciju')
-        print(payload.get('username'))
-        print("printamo password of funkcija sto se testira:")
-        print(payload.get('password'))
+        
         current_username = payload.get('username')
         current_user = db.query(models.User).filter(current_username == models.User.username).first()
         return current_user
@@ -113,6 +127,8 @@ def get_current_user(http_authorization_credentials=Depends(reusable_oauth2)) ->
             status_code=403,
             detail=f"Could not validate credentials",
         )
+
+
 
 
 
@@ -138,7 +154,7 @@ def create_new_post(user: schemas.RegisterRequest):
         raise HTTPException(status_code=400,detail="User already exists")
 
 
-    new_user=models.User( 
+    new_user=models.User(
         username=user.username,    
         password=user.password,
         phone_number = user.phone_number
@@ -149,12 +165,6 @@ def create_new_post(user: schemas.RegisterRequest):
     db.commit()
 
     return new_user
-
-
-
-# @app.get('/books', dependencies=[Depends(validate_token)])
-# def list_books():
-#     return {'data': ['Sherlock Homes', 'Harry Potter', 'Rich Dad Poor Dad']}
 
 
 
@@ -178,7 +188,10 @@ def get_an_post(id:int):
 # method to add new post
 @app.post('/api/posts',response_model=schemas.Post,
         status_code=status.HTTP_201_CREATED,tags=["posts"])
-def create_new_post(post:schemas.Post):
+def create_new_post(post:schemas.Post,http_authorization_credentials: str = Depends(reusable_oauth2)):
+   
+    current_user =get_current_user(http_authorization_credentials)
+
     db_item=db.query(models.Post).filter(models.Post.title==post.title).first()
 
     if db_item is not None:
@@ -188,7 +201,8 @@ def create_new_post(post:schemas.Post):
     new_post=models.Post( 
         title=post.title,    
         content=post.content,
-        comments = []
+        comments = [],
+        user_id = current_user.id
     )
 
 
@@ -232,16 +246,19 @@ def delete_a_post(id:int):
 # method to add new comment
 @app.post('/api/add-comment/{id}',response_model=schemas.Comment,
         status_code=status.HTTP_201_CREATED,tags=["comments"])
-def create_new_comment(id:int,comment:schemas.Comment):
+def create_new_comment(id:int,comment:schemas.Comment,http_authorization_credentials: str = Depends(reusable_oauth2)):
     
     db_item=db.query(models.Post).filter(models.Post.id==id).first()
 
     if db_item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+    current_user =get_current_user(http_authorization_credentials)
     
     new_comment=models.Comment( 
         content=comment.content,    
-        post_id=id
+        post_id=id,
+        user_id = current_user.id
     )
 
     db.add(new_comment)

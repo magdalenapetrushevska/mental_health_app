@@ -8,6 +8,15 @@ from enum import Enum
 import datetime
 
 
+
+class User(Base):
+    __tablename__='users'
+    id=Column(BigInteger,primary_key=True, autoincrement=True)
+    username=Column(String(255), unique=True,nullable=False)
+    password=Column(String(255),nullable=False)
+    phone_number=Column(String(255),nullable=False)
+
+
 class Post(Base):
     __tablename__='posts'
     id=Column(BigInteger,primary_key=True, autoincrement=True)
@@ -16,6 +25,7 @@ class Post(Base):
     posted=Column(Date, default=func.current_date())
     updated = Column(Date, nullable=True)
     comments = relationship("Comment")
+    user_id = Column(BigInteger, ForeignKey("users.id"))
 
 
 class Comment(Base):
@@ -26,13 +36,7 @@ class Comment(Base):
     updated = Column(Date, nullable=True)
     num_of_likes= Column(Integer, default=0)
     post_id = Column(BigInteger, ForeignKey("posts.id"))
+    user_id = Column(BigInteger, ForeignKey("users.id"))
 
 
-
-class User(Base):
-    __tablename__='users'
-    id=Column(BigInteger,primary_key=True, autoincrement=True)
-    username=Column(String(255), unique=True,nullable=False)
-    password=Column(String(255),nullable=False)
-    phone_number=Column(String(255),nullable=False)
 
