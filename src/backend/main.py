@@ -134,7 +134,7 @@ def verify_password(username, password):
 # method to generate token
 def generate_token(username: Union[str, Any]) -> str:
     expire = datetime.utcnow() + timedelta(
-        seconds=60 * 60 * 24 * 3  # Expired after 3 days
+        seconds= 60 * 3  # Expired after 30 minutes
     )
     to_encode = {
         "exp": expire, "username": username
