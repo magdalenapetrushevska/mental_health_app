@@ -14,7 +14,7 @@ import Posts from "../Posts/posts";
 import Post from "../Posts/post";
 import PostAdd from "../Posts/PostAdd/postAdd";
 import PostEdit from "../Posts/PostEdit/postEdit";
-
+import Home from "../Home/home";
 
 
 class App extends Component {
@@ -36,6 +36,8 @@ class App extends Component {
               exact
               element={<Register onRegister={this.register} />}
             />
+
+
 
             {/* <Route
               path="/profile"
@@ -83,7 +85,11 @@ class App extends Component {
               element={<Post post={this.state.post} />}
             />
 
-            <Route path="/" exact element={<Login />} />
+            <Route path="/login" exact element={<Login />} />
+
+            <Route path="/" exact element={<Home />} />
+     
+
           </Routes>
         </Router>
       </>
