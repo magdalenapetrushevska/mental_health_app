@@ -151,7 +151,8 @@ def validate_token(http_authorization_credentials=Depends(reusable_oauth2)) -> s
     """
     try:
         payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
-        
+        if payload.get('exp') < datetime.now():
+            raise HTTPException(status_code=403, detail="Token expired")
         current_username = payload.get('username')
         current_user = db.query(models.User).filter(current_username == models.User.username).first()
         return current_user
@@ -185,7 +186,8 @@ def validate_token(http_authorization_credentials=Depends(reusable_oauth2)) -> s
 def get_current_user(http_authorization_credentials: str = Depends(reusable_oauth2)):
     try:
         payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
-        
+        if payload.get('exp') < datetime.now():
+            raise HTTPException(status_code=403, detail="Token expired")
         current_username = payload.get('username')
         current_user = db.query(models.User).filter(current_username == models.User.username).first()
         return current_user
