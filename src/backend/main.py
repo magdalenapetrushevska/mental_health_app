@@ -21,7 +21,7 @@ import asyncio
 from fastapi.security import HTTPBearer
 from pydantic import ValidationError
 from fastapi_utils.tasks import repeat_every
-
+import pandas as pd
 
 
 SECURITY_ALGORITHM = 'HS256'
@@ -133,9 +133,10 @@ def verify_password(username, password):
 
 # method to generate token
 def generate_token(username: Union[str, Any]) -> str:
-    expire = datetime.utcnow() + timedelta(
-        seconds= 60 * 3  # Expired after 30 minutes
+    expire = datetime.now() + timedelta(
+        seconds = 259200
     )
+    
     to_encode = {
         "exp": expire, "username": username
     }
@@ -151,8 +152,7 @@ def validate_token(http_authorization_credentials=Depends(reusable_oauth2)) -> s
     """
     try:
         payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
-        if payload.get('exp') < datetime.now():
-            raise HTTPException(status_code=403, detail="Token expired")
+
         current_username = payload.get('username')
         current_user = db.query(models.User).filter(current_username == models.User.username).first()
         return current_user
@@ -186,8 +186,8 @@ def validate_token(http_authorization_credentials=Depends(reusable_oauth2)) -> s
 def get_current_user(http_authorization_credentials: str = Depends(reusable_oauth2)):
     try:
         payload = jwt.decode(http_authorization_credentials.credentials, SECRET_KEY, algorithms=[SECURITY_ALGORITHM])
-        if payload.get('exp') < datetime.now():
-            raise HTTPException(status_code=403, detail="Token expired")
+       
+
         current_username = payload.get('username')
         current_user = db.query(models.User).filter(current_username == models.User.username).first()
         return current_user
@@ -248,10 +248,18 @@ def get_all_posts():
     return db.query(models.Post).all()
 
 
+# method to get the posts of the current user
+@app.get("/api/owner-posts", response_model=List[schemas.Post], status_code=status.HTTP_200_OK,tags=["posts"])
+def get_owner_posts(http_authorization_credentials: str = Depends(reusable_oauth2)):
+    current_user = get_current_user(http_authorization_credentials)
+    return db.query(models.Post).filter(current_user.id == models.Post.user_id).all()
+
+
 # method to get post with specific id
 @app.get("/api/post/{id}", response_model=schemas.Post, status_code=status.HTTP_200_OK,tags=["posts"])
 def get_an_post(id:int):
     return db.query(models.Post).filter(id == models.Post.id).first()
+
 
 
 # method to add new post

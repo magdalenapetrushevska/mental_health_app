@@ -31,7 +31,6 @@ class App extends Component {
       <>
         <Router>
           <Routes>
-
             <Route
               path={"register"}
               exact
@@ -47,37 +46,44 @@ class App extends Component {
               }
             /> */}
 
-<Route path={"/posts/edit/:id"} element={<PostEdit 
-                            onEditPost={this.editPost}
-                            post={this.state.post}
-                            
-                            />}/>
+            <Route
+              path={"/posts/edit/:id"}
+              element={
+                <RequireToken>
+                  <PostEdit onEditPost={this.editPost} post={this.state.post} />
+                </RequireToken>
+              }
+            />
 
-          <Route
+            <Route
               path={"/posts/add"}
               exact
-              element={<PostAdd 
-              onAddPost={this.addPost}
-               />}
-               />
+              element={
+                <RequireToken>
+                  <PostAdd onAddPost={this.addPost} />
+                </RequireToken>
+              }
+            />
 
-<Route
+            <Route
               path={"/posts"}
               exact
-              element={<Posts posts={this.state.posts}
-              onView={this.viewPost}
-              onDelete={this.deletePost}
-              onEdit={this.viewPost}
-               />}
+              element={
+                <Posts
+                  posts={this.state.posts}
+                  onView={this.viewPost}
+                  onDelete={this.deletePost}
+                  onEdit={this.viewPost}
+                />
+              }
             />
-             <Route path={"/post/:id"}
-             exact
-             element={<Post post={this.state.post} />}
-           />
+            <Route
+              path={"/post/:id"}
+              exact
+              element={<Post post={this.state.post} />}
+            />
 
-
-          <Route path="/" exact element={<Login />} />
-            
+            <Route path="/" exact element={<Login />} />
           </Routes>
         </Router>
       </>
