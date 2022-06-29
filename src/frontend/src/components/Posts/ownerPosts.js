@@ -3,25 +3,19 @@ import { Link } from "react-router-dom";
 import Header from "../Header/header";
 
 
-const Posts = (props) => {
+const OwnerPosts = (props) => {
 
   
     return (
       <>
       <Header></Header>
-     
-  <div>
-        <Link title={"View"} 
-                   onClick={() => props.onViewMyPosts()}
-                    to={`/owner-posts`}
-                    class="btn btn-warning ml-5 pr-5 mt-5 mb-5">
-                     View my posts
-                 </Link>
-                 <Link class={"btn btn-block btn btn-outline-primary ml-5 pl-5"} to={"/posts/add"}>Create new post</Link>
-</div>
-<div>
-                 
-      
+      <br/><br/>
+      <div>
+        <Link class={"btn btn-block btn btn-outline-primary ml-5 pl-5"} to={"/posts/add"}>Create new post</Link>
+        </div>
+       
+
+       <div>
        {props.posts.map((term) => {
                             return (
                 //                 <div>
@@ -56,9 +50,7 @@ const Posts = (props) => {
                
 
                 //                 </div>
-
-
-
+                
 <div class="jumbotron ml-5 mr-5">
   <h1 class="display-6 mb-5 mt-5 ml-5">{term.title}</h1>
   <p class="lead">{term.posted}</p>
@@ -69,30 +61,37 @@ const Posts = (props) => {
     <Link title={"View"} 
                    onClick={() => props.onView(term.id)}
                     to={`/post/${term.id}`}
-                    class="btn btn-info btn-md ml-5">
+                    class="btn btn-success btn-md ml-5">
                     View post
+                </Link>
+
+                <button title={"Delete"} class="btn btn-danger ml-5"
+                   onClick={() => props.onDelete(term.id)}>
+                    Delete
+                </button>
+                
+                <Link className={"btn btn-info ml-5 "}
+                      onClick={() => props.onEdit(term.id)}
+                      to={`/posts/edit/${term.id}`}>
+                    Edit
                 </Link>
                  
   </p>
   <hr class="my-4"/>
 </div>
-
-
-
-
                             );
                         })}
-</div>
+
+        </div>
 
 <br/><br/>
-       
-     
+        
    
-
+    
 
       </>
     );
   }
 
 
-export default Posts;
+export default OwnerPosts;

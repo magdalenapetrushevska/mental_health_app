@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../../Header/header';
+
 
 const PostEdit = (props) => {
 
@@ -29,8 +31,7 @@ const PostEdit = (props) => {
 
     return(
         <>
-        <div>
-        </div>
+        <Header></Header>
         <div className="row mt-5">
             <div className="col-md-5">
                 <form onSubmit={onFormSubmit}>

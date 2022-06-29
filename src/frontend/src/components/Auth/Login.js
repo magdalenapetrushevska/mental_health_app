@@ -26,8 +26,8 @@ export default function Login(props){
            console.log(response.data.token,'response.data.token')
            if(response.data.token){
              setToken(response.data.token)
-             //props.onLogin();
-             navigate("/");
+             props.afterLogin();
+             navigate("/mood-history");
            }
          })
          .catch(function(error){
@@ -37,7 +37,10 @@ export default function Login(props){
  }
 
     return(
+      <>
         
+
+       
         <div style={{minHeight:800, marginTop:30}}>
        
           <div style={{marginTop:30}}>
@@ -47,80 +50,47 @@ export default function Login(props){
               <p>you are logged in</p>
             ):(
                
-                // <div>
+            <>
 
-                //    <form>
-                //        <label style={{marginRight: 10 }}>Input Username</label>
-                //        <input type='text' onChange={(e)=>setUsername(e.target.value)}/>
-
-                //        <label style={{marginRight: 10 }}>Input Password</label>
-                //        <input type='text' onChange={(e)=>setPassword(e.target.value)}/>
-
-                //        <button type='button' onClick={login}>Login</button>   
-                //    </form>
-
-                // </div>
-                <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 mt-16">
-                <div className="max-w-md w-full space-y-8">
-                  <div>
-                    <img
-                      className="mx-auto h-12 w-auto"
-                      src="https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg"
-                      alt="Workflow"
-                    />
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                      Login
-                    </h2>
-                  </div>
-                  <form className="mt-16 space-y-6" >
-                    <div className="rounded-lg shadow-lg -space-y-px">
-                      <div>
-                        <label htmlFor="username" className="sr-only">
-                          Username
-                        </label>
-                        <input
-                          id="username"
-                          name="username"
-                          type="text"
-                          required
-                          className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                          placeholder="Username"
-                          onChange={(e)=>setUsername(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="password" className="sr-only">
-                          Password
-                        </label>
-                        <input
-                          id="password"
-                          name="password"
-                          type="password"
-                          required
-                          className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                          placeholder="Password"
-                          onChange={(e)=>setPassword(e.target.value)}
-                        />
-                      </div>
-      
-                     
-                    </div>
-                    <div>
-                      <button
-                        type="submit"
-                        className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        onClick={login}>
-                        Login
-                      </button>
-                     
-                    </div>
-                  </form>
+              <div>
+              <h2 class="ml-5">Login</h2>
+          </div>
+                <div class="row mt-5 ml-5">
+                <div class="col-md-5 ml-5">
+                    <form >
+                        <div className="form-group">
+                            <label htmlFor="name">Username</label>
+                            <input type="text"
+                                   className="form-control"
+                                   id="username"
+                                   name="username"
+                                   required
+                                   placeholder="Enter username"
+                                   onChange={(e)=>setUsername(e.target.value)}
+                            />
+                        </div><br/>
+                        <div className="form-group">
+                            <label htmlFor="price">Password</label>
+                            <input type="password"
+                                   className="form-control"
+                                   id="password"
+                                   name="password"
+                                   placeholder="Enter password"
+                                   required
+                                   onChange={(e)=>setPassword(e.target.value)}
+                            />
+                        </div><br/>
+                        
+                        <button id="submit" type="button" className="btn btn-primary" onClick={login}>Submit</button>
+                    </form>
                 </div>
-              </div>
+            </div>
+            </>
+               
             )
           }
           </div>
         </div>  
-        
+        </> 
     )
 }

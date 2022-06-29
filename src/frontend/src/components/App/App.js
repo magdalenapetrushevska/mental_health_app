@@ -9,12 +9,20 @@ import {
 import MentalHealthService from "../../repository/mentalHealthRepository";
 import Register from "../Auth/Register";
 import Login from "../Auth/Login";
-import {RequireToken} from '../Auth/Auth'
+import {RequireToken} from '../Auth/Auth';
 import Posts from "../Posts/posts";
 import Post from "../Posts/post";
 import PostAdd from "../Posts/PostAdd/postAdd";
 import PostEdit from "../Posts/PostEdit/postEdit";
 import Home from "../Home/home";
+import Reminders from "../Reminders/reminders";
+import AddReminder from "../Reminders/AddReminder";
+import Reminder from "../Reminders/reminder";
+import RateMood from "../Moods/rateMood";
+import HistoryMood from "../Moods/historyMood";
+import OwnerPosts from "../Posts/ownerPosts";
+import Header from "../Header/header";
+import ReminderEdit from "../Reminders/ReminderEdit";
 
 
 class App extends Component {
@@ -23,6 +31,11 @@ class App extends Component {
     this.state = {
       posts: [],
       post: {},
+      reminders:[],
+      reminder:{},
+      historyMoods:[],
+      moods:[],
+      myPosts:[],
 
     };
   }
@@ -37,16 +50,33 @@ class App extends Component {
               element={<Register onRegister={this.register} />}
             />
 
+            
 
-
-            {/* <Route
-              path="/profile"
-              exact element={
+            <Route
+              path={"/moods"}
+              exact
+              element={
                 <RequireToken>
-                  <Profile />
+                  <RateMood
+                    moods={this.state.moods}
+                    onRateMood={this.addHistoryMood}
+                  />
                 </RequireToken>
               }
-            /> */}
+            />
+
+            <Route
+              path={"/mood-history"}
+              exact
+              element={
+                <RequireToken>
+                  <HistoryMood
+                    historyMoods={this.state.historyMoods}
+                    onExportHistoryMood={this.exportHistoryMood}
+                  />
+                </RequireToken>
+              }
+            />
 
             <Route
               path={"/posts/edit/:id"}
@@ -67,6 +97,8 @@ class App extends Component {
               }
             />
 
+           
+
             <Route
               path={"/posts"}
               exact
@@ -74,6 +106,7 @@ class App extends Component {
                 <Posts
                   posts={this.state.posts}
                   onView={this.viewPost}
+                  onViewMyPosts={this.viewMyPosts}
                   onDelete={this.deletePost}
                   onEdit={this.viewPost}
                 />
@@ -82,14 +115,84 @@ class App extends Component {
             <Route
               path={"/post/:id"}
               exact
-              element={<Post post={this.state.post} />}
+              element={
+                <RequireToken>
+                  <Post post={this.state.post} comments={this.state.comments} />
+                </RequireToken>
+              }
             />
 
-            <Route path="/login" exact element={<Login />} />
+            <Route
+              path={"/reminders"}
+              exact
+              element={
+                <RequireToken>
+                  <Reminders
+                    reminders={this.state.reminders}
+                    onView={this.viewReminder}
+                    onDelete={this.deleteReminder}
+                    onEdit={this.viewReminder}
+                  />
+                </RequireToken>
+              }
+            />
+
+            <Route
+              path={"/reminder/edit/:id"}
+              element={
+                <RequireToken>
+                  <ReminderEdit
+                    onEditReminder={this.editReminder}
+                    reminder={this.state.reminder}
+                  />
+                </RequireToken>
+              }
+            />
+
+            <Route
+              path={"/owner-posts"}
+              exact
+              element={
+                <RequireToken>
+                  <OwnerPosts
+                    posts={this.state.myPosts}
+                    onView={this.viewPost}
+                    onDelete={this.deletePost}
+                    onEdit={this.viewPost}
+                  />
+                </RequireToken>
+              }
+            />
+
+            <Route
+              path={"/reminders/add"}
+              exact
+              element={
+                <RequireToken>
+                  <AddReminder onAddReminder={this.addReminder} />
+                </RequireToken>
+              }
+            />
+
+            <Route
+              path={"/reminder/:id"}
+              exact
+              element={
+                <RequireToken>
+                  <Reminder reminder={this.state.reminder} />
+                </RequireToken>
+              }
+            />
+
+            <Route
+              path="/login"
+              exact
+              element={<Login afterLogin={this.afterLogin} />}
+            />
+
+            <Route path="/header" exact element={<Header />} />
 
             <Route path="/" exact element={<Home />} />
-     
-
           </Routes>
         </Router>
       </>
@@ -98,6 +201,10 @@ class App extends Component {
 
   componentDidMount() { 
    this.loadPosts();
+   this.viewMyPosts();
+   this.loadMoods();
+   this.loadReminders();
+   this.loadHistoryMood();
   };
   
 
@@ -145,8 +252,110 @@ MentalHealthService.editPost(id, title,content)
     });
 };
 
+loadReminders = () => {
+  MentalHealthService.fetchReminders().then((data) => {
+    this.setState({
+      reminders: data.data,
+    });
+  });
+};
+
+viewReminder = (id) => {
+  MentalHealthService.getReminder(id)
+      .then((data) => {
+          this.setState({
+              reminder: data.data,
+              
+          })
+          this.loadComments(id);
+      })
+};
 
 
+deleteReminder = (id) => {
+  MentalHealthService.deleteReminder(id)
+      .then(() => {
+          this.loadReminders();
+      });
+  };
+
+  addReminder = (name,quantity,start_date,end_date,publish_time) => {
+  MentalHealthService.addReminder(name,quantity,start_date,end_date,publish_time)
+      .then(() => {
+        this.loadReminders();
+      });
+  };
+  
+  loadMoods= () => {
+    MentalHealthService.fetchMoods().then((data) => {
+      this.setState({
+        moods: data.data,
+      });
+    });
+  };
+  
+  addHistoryMood = (category,description) => {
+    MentalHealthService.addHistoryMood(category,description)
+      .then(() => {
+        this.loadHistoryMood();
+      });
+  };
+  
+  loadHistoryMood = () => {
+    MentalHealthService.fetchHistoryMood().then((data) => {
+      this.setState({
+        historyMoods: data.data,
+      });
+    });
+  };
+
+  editReminder = (id,name,quantity,start_date,end_date,publish_time) => {
+  MentalHealthService.editReminder(id, name,quantity,start_date,end_date,publish_time)
+      .then(() => {
+        this.loadReminders();
+      });
+  };
+  
+  viewMyPosts = () => {
+    MentalHealthService.fetchMyPosts().then((data) => {
+      this.setState({
+        myPosts: data.data,
+      });
+    });
+  };
+
+  loadComments= (id) => {
+    MentalHealthService.fetchComments(id).then((data) => {
+      this.setState({
+        comments: data.data,
+      });
+    });
+  };
+  
+
+  
+  exportHistoryMood = () => {
+  MentalHealthService.exportHistoryMood()
+      
+};
+
+addComment = (id,content) => {
+  MentalHealthService.addComment(id,content)
+      .then(() => {
+        this.loadPosts();
+      });
+  };
+
+
+
+
+afterLogin = () =>{
+  this.loadPosts();
+   this.viewMyPosts();
+   this.loadMoods();
+   this.loadReminders();
+   this.loadHistoryMood();
+};
 
 }
 

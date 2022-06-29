@@ -362,9 +362,10 @@ def delete_comment(id:int):
 
 
 # method to get all comments for post with specific id
-@app.get("/api/{id}/comments", status_code=status.HTTP_200_OK,tags=["comments"])
+@app.get("/api/comments/{id}", status_code=status.HTTP_200_OK,tags=["comments"])
 def get_all_comments(id:int):
     return db.query(models.Comment).filter(id == models.Comment.post_id).all()
+
 
 
 # method to increase number of likes for specific comment
@@ -506,3 +507,26 @@ def delete_a_reminder(id:int):
     db.commit()
 
     return reminder_to_delete
+
+
+
+
+# method to get reminder with specific id
+@app.get("/api/reminder/{id}", status_code=status.HTTP_200_OK,tags=["reminders"])
+def get_a_reminder(id:int):
+    return db.query(models.Reminder).filter(id == models.Reminder.id).first()
+
+
+# method to update a reminder
+@app.put("/api/reminder/{id}", status_code=status.HTTP_200_OK,tags=["reminders"],dependencies=[Depends(validate_token)])
+def update_reminder(id:int,reminder:schemas.Reminder):
+    reminder_to_update = db.query(models.Reminder).filter(models.Reminder.id == id).first()
+    reminder_to_update.name=reminder.name
+    reminder_to_update.quantity=reminder.quantity
+    reminder_to_update.start_date=reminder.start_date
+    reminder_to_update.end_date=reminder.end_date
+    reminder_to_update.publish_time=reminder.publish_time
+
+    db.commit()
+
+    return reminder_to_update
