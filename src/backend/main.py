@@ -398,7 +398,7 @@ def get_mood_options():
 
 # method to add new mood
 @app.post("/api/new-mood",tags=["moods"])
-def get_activities(form:schemas.RateMoodForm, http_authorization_credentials: str = Depends(reusable_oauth2)):
+def add_new_mood_record(form:schemas.RateMoodForm, http_authorization_credentials: str = Depends(reusable_oauth2)):
 
     current_user =get_current_user(http_authorization_credentials)
 
