@@ -2,4 +2,4 @@ This repository is designated for a web application named MentalHealthApp as par
 
 Faculty of Computer Science and Engineering, UKIM 2020/2021
 
-##The project was developed by Magdalena Petrushevska, 181541
+#### The project was developed by Magdalena Petrushevska, 181541
